@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Notification.Api.Commands</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NoWarn>CA2254</NoWarn>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Notification.Api.Domain\Notification.Api.Domain.csproj" />
+    <ProjectReference Include="..\Notification.Api.Infrastructure.Exceptions\Notification.Api.Infrastructure.Exceptions.csproj" />
+    <ProjectReference Include="..\Notification.Api.Infrastructure.Repository\Notification.Api.Infrastructure.Repository.csproj" />
+    <ProjectReference Include="..\Notification.Api.Infrastructure.Messages\Notification.Api.Infrastructure.Messages.csproj" />
+    <ProjectReference Include="..\Notification.Api.Queries\Notification.Api.Queries.csproj" />
+  </ItemGroup>
+
+</Project>

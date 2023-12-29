@@ -1,0 +1,173 @@
+trigger:
+  branches:
+    include:
+      - main
+      - fix/*
+      - bug/*
+      - feat/*
+      - feature/*
+  paths:
+    exclude:
+      - README.md
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: major
+    value: v2
+  - name: minor
+    value: 0
+  - name: build
+    value: $(Build.BuildID)
+  - name: rev
+    value: "$(echo $(Build.SourceVersion) | cut -c1-7)"
+  - name: projectName
+    value: 'notification-api-v2'
+  - name: awsRegion
+    value: us-east-1
+
+  - name: imageVersion
+    ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+      value: '$(major).$(minor).$(build).rev-$(rev)'
+    ${{ else }}:
+      value: '$(major).$(minor).$(build).rev-$(rev)-dev'
+
+stages:
+  - stage: CI
+    displayName: 'Build the application'
+    jobs:
+      - job: 'Build'
+        displayName: 'Continuous Integration'
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: 'sdk'
+              version: '6.0.x'
+
+          - bash: |
+              make build path=$(System.DefaultWorkingDirectory)
+            displayName: Build
+
+          - bash: |
+              echo 'Skipping "make lint" temporarily until lint error solve'
+            displayName: Lint
+
+          - bash: |
+              make scan-sec path=$(System.DefaultWorkingDirectory)
+            displayName: Security Scan
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Scan to Build Artifacts'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/notification.sarif'
+              ArtifactName: 'CodeAnalysisLogs'
+              publishLocation: 'Container'
+
+          - bash: |
+              make test
+            displayName: Test
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Test Results'
+            inputs:
+              testRunner: VSTest
+              testResultsFiles: '**/*.trx'
+              failTaskOnFailedTests: true
+
+  - stage: DockerBuild
+    dependsOn: CI
+    displayName: Push Image to ECR
+    condition: succeeded()
+    jobs:
+      - job: Docker_Build
+        condition: succeeded()
+        displayName: Build Docker Image
+        steps:
+          - bash: |
+              echo '##vso[task.setvariable variable=imageVersion]$(imageVersion)'
+              make docker-build imageName="$(projectName)" version="$(imageVersion)"
+            displayName: Build Docker Image
+
+          - task: AWSShellScript@1
+            displayName: Push Docker Image
+            inputs:
+              awsCredentials: 'AWSVegaIT'
+              regionName: '$(awsRegion)'
+              scriptType: 'inline'
+              inlineScript: |
+                aws ecr get-login-password --region "$(awsRegion)" | \
+                docker login --username AWS --password-stdin 434885180636.dkr.ecr."$(awsRegion)".amazonaws.com
+                make docker-push imageName="$(projectName)" version="$(imageVersion)"
+
+  - stage: Deploy_DEV
+    displayName: 'Deploy application - DEV'
+    condition: succeeded()
+    jobs:
+      - deployment: dev
+        displayName: Approval Request
+        environment: 'Notification-Api-DEV'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: |
+                    echo "$(Build.SourceVersion)"
+                    echo '##vso[task.setvariable variable=imageVersion]$(imageVersion)'
+                    echo "$(imageVersion)"
+                  displayName: Expand Variable Version
+
+                - checkout: git://notification/notification.release@refs/heads/main
+
+                - task: AWSShellScript@1
+                  inputs:
+                    awsCredentials: 'AWSVegaIT'
+                    regionName: '$(awsRegion)'
+                    scriptType: 'inline'
+                    inlineScript: |
+                      make deploy-api stage=dev region='$(awsRegion)' app="$(projectName)" version="$(imageVersion)"
+
+  - stage: IntegrationTest
+    displayName: 'Integration Test Dev'
+    condition: succeeded()
+    jobs:
+      - job: Api_Contract_Test
+        displayName: 'DEV - Api Contract Test'
+        steps:
+          - bash: |
+              echo "make api-pact-test"
+            displayName: Api Concract Test
+
+      - job: Integration_Test
+        displayName: 'DEV - Integration Test'
+        steps:
+          - bash: |
+              echo "make integration-test"
+            displayName: Integration Test
+
+  - stage: Deploy_PROD
+    displayName: 'Deploy application - PROD'
+    condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+    jobs:
+      - deployment: prod
+        displayName: Approval Request
+        environment: 'Notification-Api-PROD'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: |
+                    echo "$(Build.SourceVersion)"
+                    echo '##vso[task.setvariable variable=imageVersion]$(imageVersion)'
+                    echo "$(imageVersion)"
+                  displayName: Expand Variable Version
+
+                - checkout: git://notification/notification.release@refs/heads/main
+
+                - task: AWSShellScript@1
+                  inputs:
+                    awsCredentials: 'AWSVegaIT'
+                    regionName: '$(awsRegion)'
+                    scriptType: 'inline'
+                    inlineScript: |
+                      make deploy-api stage=prod region='$(awsRegion)' app="$(projectName)" version="$(imageVersion)"

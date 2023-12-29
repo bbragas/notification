@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>Notification.Api</RootNamespace>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<NoWarn>CA2254</NoWarn>
+		<UserSecretsId>c62643bc-3e4d-4b81-9a5c-43c952c0260f</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AutoMapper" Version="12.0.0" />
+		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
+		<PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.2.2" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+		<PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.1" />
+		<PackageReference Include="prometheus-net" Version="5.0.2" />
+		<PackageReference Include="prometheus-net.AspNetCore" Version="5.0.2" />
+		<PackageReference Include="MediatR" Version="10.0.1" />
+		<PackageReference Include="AspNetCore.HealthChecks.MongoDb" Version="6.0.1" />
+		<PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0" />
+		<PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
+		<PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Notification.Api.Commands\Notification.Api.Commands.csproj" />
+		<ProjectReference Include="..\Notification.Api.Gateway\Notification.Api.Gateway.Http.csproj" />
+		<ProjectReference Include="..\Notification.Api.Infrastructure.Exceptions\Notification.Api.Infrastructure.Exceptions.csproj" />
+		<ProjectReference Include="..\Notification.Api.Infrastructure.Messages\Notification.Api.Infrastructure.Messages.csproj" />
+		<ProjectReference Include="..\Notification.Api.Infrastructure.Repository\Notification.Api.Infrastructure.Repository.csproj" />
+		<ProjectReference Include="..\Notification.Api.Queries\Notification.Api.Queries.csproj" />
+	</ItemGroup>
+
+</Project>

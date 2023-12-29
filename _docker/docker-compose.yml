@@ -1,0 +1,70 @@
+version: '3.1'
+
+networks:
+  monitor-net:
+    driver: bridge
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+  mongodb_data: {}
+
+services:
+  notification:
+    image: notification:v1.0
+    environment:
+     - Mongo__ConnectionString=mongodb://root:pwd@mongoDB:27017
+    ports:
+      - "8181:80"
+
+  mongoDB:
+    image: mongo:5.0.5-focal
+    ports:
+    - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=notification
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=pwd
+    volumes:
+      - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./mongodb_data:/data/db
+
+  prometheus:
+    image: prom/prometheus:v2.32.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - ./prometheus_data:/prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    expose:
+      - 9090
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  grafana:
+    image: grafana/grafana:8.2.6
+    container_name: grafana
+    volumes:
+      - ./grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./grafana/datasources:/etc/grafana/datasources
+    user: "104"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    expose:
+      - 3000
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"

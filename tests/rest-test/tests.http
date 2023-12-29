@@ -1,0 +1,23 @@
+@url = http://localhost:8181
+@contentType = application/json
+
+### Test Health Check
+GET {{url}}/health HTTP/1.1
+
+### Send Contract Json
+POST {{url}}/api/v1/notify HTTP/1.1
+Content-Type: {{contentType}}
+
+{
+    "client": "Marketing Department",
+    "campaign": "Marketing Campaing 1",
+    "projectId": "{{$guid}}",
+    "projectEntityId": "{{$guid}}",
+    "senderName": "VegaIT",
+    "senderEmail": "no-reply@vegait.com",
+    "recipientName": "Fulano",
+    "recipientEmail": "dacip34156@peykesabz.com",
+    "subject": "testing-{{$guid}}-from-notification-api",
+    "body": "<p>olá</p>"
+    //"body": "{\n\"to\": \"dacip34156@peykesabz.com\",\n\"name\": \"temp-email\",\n\"subject\": \"ola - 1\",\n\"html\":\"<p> ola</p>\"\n}"
+}
